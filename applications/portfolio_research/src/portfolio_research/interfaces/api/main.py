@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from finance_agents.interfaces.api.routers.portfolio import router as portfolio_router
+from portfolio_research.interfaces.api.routers.portfolio import router as portfolio_router
 
 app = FastAPI(title="Finance Agents API")
 

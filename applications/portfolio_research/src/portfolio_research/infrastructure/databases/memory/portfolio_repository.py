@@ -1,6 +1,6 @@
-from finance_agents.domain.portfolio.holding import Holding
-from finance_agents.domain.portfolio.portfolio import Portfolio
-from finance_agents.repositories.portfolio_repository import PortfolioRepository
+from portfolio_research.domain.portfolio.holding import Holding
+from portfolio_research.domain.portfolio.portfolio import Portfolio
+from portfolio_research.repositories.portfolio_repository import PortfolioRepository
 
 
 class InMemoryPortfolioRepository(PortfolioRepository):

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from finance_agents.domain.portfolio.holding import Holding
+from portfolio_research.domain.portfolio.holding import Holding
 
 
 @dataclass

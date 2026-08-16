@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
-from finance_agents.application.portfolio_service import PortfolioService
-from finance_agents.infrastructure.databases.memory.portfolio_repository import InMemoryPortfolioRepository
-from finance_agents.infrastructure.databases.mongo.portfolio_repository import MongoPortfolioRepository
-from finance_agents.interfaces.api.schemas.portfolio import PortfolioResponse
+from portfolio_research.application.portfolio_service import PortfolioService
+from portfolio_research.infrastructure.databases.memory.portfolio_repository import InMemoryPortfolioRepository
+from portfolio_research.infrastructure.databases.mongo.portfolio_repository import MongoPortfolioRepository
+from portfolio_research.interfaces.api.schemas.portfolio import PortfolioResponse
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
