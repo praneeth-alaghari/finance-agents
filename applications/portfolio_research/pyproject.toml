@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "portfolio-research"
+version = "0.1.0"
+description = "Standalone portfolio research and financial analysis application."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi",
+    "uvicorn"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["portfolio_research*"]
