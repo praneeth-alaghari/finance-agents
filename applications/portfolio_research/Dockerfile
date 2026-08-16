@@ -2,6 +2,8 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+ENV MONGO_URI="mongodb://host.docker.internal:27017"
+
 COPY pyproject.toml .
 
 COPY src ./src
