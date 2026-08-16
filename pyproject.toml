@@ -3,15 +3,8 @@ requires = ["setuptools>=61.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "finance-agents"
+name = "finance-agents-monorepo"
 version = "0.1.0"
-description = "Production-oriented agentic AI platform for financial applications, featuring modular agents, provider abstractions, market data integrations, LLM orchestration, and extensible tool-driven workflows."
+description = "Monorepo workspace for financial applications and AI agents."
 requires-python = ">=3.12,<3.13"
-dependencies = [
-    "fastapi",
-    "uvicorn"
-]
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["finance_agents*"]
+dependencies = []
