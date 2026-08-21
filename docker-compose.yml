@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  portfolio_research:
+    build:
+      context: ./applications/portfolio_research
+      dockerfile: Dockerfile
+    container_name: portfolio_research_service
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - PYTHONPATH=/app/src
+    volumes:
+      - ./applications/portfolio_research/src:/app/src
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+
+  frontend:
+    build:
+      context: ./frontend/streamlit
+      dockerfile: Dockerfile
+    container_name: frontend_streamlit
+    environment:
+      - API_BASE_URL=http://portfolio_research:8000/api/v1
+    volumes:
+      - ./frontend/streamlit/app.py:/app/app.py
+    ports:
+      - "8501:8501"
+    depends_on:
+      - portfolio_research
+
+volumes:
+  mongo_data:

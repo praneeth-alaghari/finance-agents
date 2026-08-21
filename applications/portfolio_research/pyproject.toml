@@ -10,7 +10,8 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi",
     "uvicorn",
-    "pymongo"
+    "pymongo",
+    "python-multipart" # needed for fastAPI to accept form data and file uploads
 ]
 
 [tool.setuptools.packages.find]

@@ -8,54 +8,95 @@ from portfolio_research.repositories.portfolio_repository import PortfolioReposi
 class MongoPortfolioRepository(PortfolioRepository):
     """MongoDB concrete implementation of PortfolioRepository contract."""
 
-    def __init__(self, mongo_uri: str = None, db_name: str = "finance_agents"):
+    def __init__(self, mongo_uri=None, db_name="finance_agents"):
         if not mongo_uri:
             mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
         self._client = MongoClient(mongo_uri, serverSelectionTimeoutMS=3000)
         self._db = self._client[db_name]
         self._collection = self._db["portfolios"]
-        self._seed_default_portfolio_if_empty()
 
-    def _seed_default_portfolio_if_empty(self):
-        """Seeds initial sample portfolio data into MongoDB if the collection is empty."""
-        try:
-            if self._collection.count_documents({}) == 0:
-                sample_doc = {
-                    "portfolio_id": "default",
-                    "holdings": [
-                        {"symbol": "AAPL", "quantity": 10.0, "average_price": 150.0},
-                        {"symbol": "MSFT", "quantity": 5.0, "average_price": 280.0},
-                        {"symbol": "GOOGL", "quantity": 8.0, "average_price": 120.0},
-                        {"symbol": "NVDA", "quantity": 15.0, "average_price": 110.0},
-                    ],
-                }
-                self._collection.insert_one(sample_doc)
-        except Exception:
-            # If database is offline during startup, skip seeding
-            pass
+    def upsert_portfolio(self, portfolio):
+        """Upsert a portfolio into MongoDB.
 
-    def get_portfolio(self, portfolio_id: str = "default"):
-        """Retrieves portfolio domain entity from MongoDB collection by portfolio_id."""
-        try:
-            doc = self._collection.find_one({"portfolio_id": portfolio_id})
-            if doc:
-                holdings = [
-                    Holding(
-                        symbol=h.get("ticker", "UNKNOWN"),
-                        quantity=float(h.get("quantity", 0)),
-                        average_price=float(h.get("average_price", 0)),
-                    )
-                    for h in doc.get("holdings", [])
-                ]
-                return Portfolio(portfolio_id=doc["portfolio_id"], holdings=holdings)
-        except Exception as e:
-            print(f"[MongoPortfolioRepository ERROR] Failed to fetch portfolio '{portfolio_id}': {e}")
+        Converts the domain Portfolio entity to a Mongo document, matching by
+        portfolio_id and replacing the entire holdings list using $set with upsert=True.
+        """
+        portfolio_id = getattr(portfolio, "portfolio_id", None) if hasattr(portfolio, "portfolio_id") else portfolio.get("portfolio_id")
+        raw_holdings = getattr(portfolio, "holdings", []) if hasattr(portfolio, "holdings") else portfolio.get("holdings", [])
 
-        # Fallback if doc not found or connection issue occurs
-        return Portfolio(
-            portfolio_id=portfolio_id,
-            holdings=[
-                Holding(symbol="AAPL", quantity=10.0, average_price=150.0),
-                Holding(symbol="MSFT", quantity=5.0, average_price=280.0),
-            ],
+        holdings_doc = []
+        for holding in raw_holdings:
+            if isinstance(holding, dict):
+                ticker = holding.get("ticker") or holding.get("symbol")
+                quantity = holding.get("quantity")
+                average_price = holding.get("average_price")
+            else:
+                ticker = getattr(holding, "ticker", None) or getattr(holding, "symbol", None)
+                quantity = getattr(holding, "quantity", None)
+                average_price = getattr(holding, "average_price", None)
+
+            holdings_doc.append({
+                "ticker": ticker,
+                "quantity": quantity,
+                "average_price": average_price,
+            })
+
+        portfolio_doc = {
+            "portfolio_id": portfolio_id,
+            "holdings": holdings_doc,
+        }
+
+        return self._collection.update_one(
+            {"portfolio_id": portfolio_id},
+            {"$set": portfolio_doc},
+            upsert=True,
         )
+
+    def get_portfolio(self, portfolio_id):
+        """Retrieve a Portfolio domain entity by its ID from MongoDB."""
+        doc = self._collection.find_one({"portfolio_id": portfolio_id})
+        if not doc:
+            return None
+
+        holdings = []
+        for h in doc.get("holdings", []):
+            holdings.append(
+                Holding(
+                    symbol=h.get("ticker") or h.get("symbol", ""),
+                    quantity=float(h.get("quantity", 0.0)),
+                    average_price=float(h.get("average_price", 0.0)),
+                )
+            )
+        return Portfolio(portfolio_id=doc["portfolio_id"], holdings=holdings)
+
+    def get_all_portfolios(self):
+        # TODO:
+        # - Mongo operation to be used: self._collection.find({})
+        # - Expected input: None
+        # - Expected return value: List[Portfolio] - A list of all Portfolio domain entities found in the collection
+        # - Note: If query fails, raise an exception
+        pass
+
+    def save_portfolio(self, portfolio):
+        # TODO:
+        # - Mongo operation to be used: self._collection.insert_one(portfolio_doc)
+        # - Expected input: portfolio (Portfolio) - The Portfolio domain entity to insert
+        # - Expected return value: None (or the inserted ID / persisted entity)
+        # - Note: If insertion fails or duplicate key error occurs, raise an exception
+        pass
+
+    def update_portfolio(self, portfolio):
+        # TODO:
+        # - Mongo operation to be used: self._collection.update_one({"portfolio_id": portfolio.portfolio_id}, {"$set": portfolio_doc})
+        # - Expected input: portfolio (Portfolio) - The Portfolio domain entity containing updated data
+        # - Expected return value: None (or boolean/update result indicating success)
+        # - Note: If update fails or target portfolio is not found, raise an exception
+        pass
+
+    def delete_portfolio(self, portfolio_id):
+        # TODO:
+        # - Mongo operation to be used: self._collection.delete_one({"portfolio_id": portfolio_id})
+        # - Expected input: portfolio_id (str) - The unique identifier of the portfolio to delete
+        # - Expected return value: None (or boolean/delete result indicating success)
+        # - Note: If deletion fails or document does not exist, raise an exception
+        pass
