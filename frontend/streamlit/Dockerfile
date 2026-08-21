@@ -2,9 +2,10 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir streamlit requests
+COPY pyproject.toml .
+RUN pip install --no-cache-dir .
 
-COPY app.py .
+COPY . .
 
 ENV API_BASE_URL="http://portfolio_research:8000/api/v1"
 
