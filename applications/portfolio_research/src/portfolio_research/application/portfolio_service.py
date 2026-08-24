@@ -8,12 +8,15 @@ class PortfolioService:
     def __init__(self, portfolio_repository):
         self._portfolio_repository = portfolio_repository
 
-    def get_portfolio(self, portfolio_id="default"):
-        """Retrieves a portfolio domain entity by ID via injected repository."""
-        return self._portfolio_repository.get_portfolio(portfolio_id)
+    def get_portfolio(self, user_id="default"):
+        """Retrieves a portfolio domain entity by user_id via injected repository."""
+        return self._portfolio_repository.get_portfolio(user_id)
 
-    def upload_portfolio_csv(self, portfolio_id, csv_rows):
+    def upload_portfolio_csv(self, user_id, csv_rows):
         """Parses CSV rows, validates data, constructs domain objects, and persists via upsert."""
+        if not user_id:
+            raise ValueError("User identification is required to upload a portfolio.")
+
         holdings = []
         for index, row in enumerate(csv_rows, start=1):
             ticker = row.get("ticker") or row.get("symbol") or row.get("Ticker") or row.get("Symbol")
@@ -50,6 +53,6 @@ class PortfolioService:
                 )
             )
 
-        portfolio = Portfolio(portfolio_id=portfolio_id, holdings=holdings)
+        portfolio = Portfolio(user_id=user_id, holdings=holdings, portfolio_id=user_id)
         self._portfolio_repository.upsert_portfolio(portfolio)
         return portfolio

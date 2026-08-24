@@ -12,6 +12,7 @@ class HoldingResponse(BaseModel):
 
 class PortfolioResponse(BaseModel):
     """API response model for a portfolio."""
+    user_id: str
     portfolio_id: str
     holdings: list[HoldingResponse]
 

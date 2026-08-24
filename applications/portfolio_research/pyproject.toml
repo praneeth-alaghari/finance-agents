@@ -11,7 +11,8 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "pymongo",
-    "python-multipart" # needed for fastAPI to accept form data and file uploads
+    "python-multipart", # needed for fastAPI to accept form data and file uploads
+    "bcrypt"
 ]
 
 [tool.setuptools.packages.find]

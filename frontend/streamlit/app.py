@@ -1,48 +1,172 @@
 import os
-import streamlit as st
 import requests
+import streamlit as st
 
-# Docker service name URL by default, configurable via API_BASE_URL env var
+# Configure Landing Page
+st.set_page_config(
+    page_title="Finance Agents Hub",
+    page_icon="💼",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# API Configuration
 API_BASE_URL = os.getenv("API_BASE_URL", "http://portfolio_research:8000/api/v1")
 LOCAL_FALLBACK_URL = "http://localhost:8000/api/v1"
 
-st.title("Finance Agents")
 
-# Helper function to perform requests with automatic fallback (Docker service name -> localhost)
 def fetch_api(path, method="GET", **kwargs):
+    """Helper function to perform API requests with fallback to localhost."""
     url = f"{API_BASE_URL}{path}"
     try:
         if method == "GET":
-            return requests.get(url, timeout=3, **kwargs)
+            return requests.get(url, timeout=5, **kwargs)
         elif method == "POST":
-            return requests.post(url, timeout=5, **kwargs)
+            return requests.post(url, timeout=10, **kwargs)
     except requests.exceptions.ConnectionError:
-        # Fallback to localhost if Docker service name is unreachable (e.g. running locally outside container)
         if API_BASE_URL != LOCAL_FALLBACK_URL:
             fallback_url = f"{LOCAL_FALLBACK_URL}{path}"
             if method == "GET":
-                return requests.get(fallback_url, timeout=3, **kwargs)
+                return requests.get(fallback_url, timeout=5, **kwargs)
             elif method == "POST":
-                return requests.post(fallback_url, timeout=5, **kwargs)
+                return requests.post(fallback_url, timeout=10, **kwargs)
         raise
 
-# 1. Simple button to fetch portfolio from FastAPI (port 8000)
-if st.button("Get Portfolio"):
-    try:
-        response = fetch_api("/portfolio")
-        st.write("Status Code:", response.status_code)
-        st.json(response.json() if response.ok else {"error": response.text})
-    except requests.exceptions.ConnectionError:
-        st.error("❌ Could not connect to FastAPI (tried Docker service `portfolio_research:8000` and local `localhost:8000`). Please ensure the server is running.")
 
-# 2. Simple file uploader to upload CSV to FastAPI (port 8000)
-uploaded_file = st.file_uploader("Select Portfolio CSV", type=["csv"])
+# Initialize session state for user authentication
+if "user" not in st.session_state:
+    st.session_state["user"] = None
 
-if uploaded_file and st.button("Upload"):
-    try:
-        files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "text/csv")}
-        response = fetch_api("/portfolio/upload", method="POST", files=files)
-        st.write("Status Code:", response.status_code)
-        st.json(response.json())
-    except requests.exceptions.ConnectionError:
-        st.error("❌ Could not connect to FastAPI (tried Docker service `portfolio_research:8000` and local `localhost:8000`). Please ensure the server is running.")
+# ==========================================
+# 1. UNAUTHENTICATED STATE: AUTHENTICATION GATE
+# ==========================================
+if not st.session_state["user"]:
+    st.title("💼 Finance Agents")
+    st.markdown("### Secure Financial Intelligence & Multi-Agent Platform")
+    st.caption("Please log in to your account or create a new account to continue.")
+
+    st.divider()
+
+    _, center_col, _ = st.columns([1, 2, 1])
+
+    with center_col:
+        auth_tab_login, auth_tab_signup = st.tabs(["🔐 Log In", "📝 Sign Up"])
+
+        # TAB 1: LOGIN
+        with auth_tab_login:
+            st.subheader("Welcome Back")
+            with st.form("login_form", clear_on_submit=False):
+                login_identifier = st.text_input("Username or Email", placeholder="e.g. praneeth or user@example.com")
+                login_password = st.text_input("Password", type="password", placeholder="Enter your password")
+                login_submitted = st.form_submit_button("Log In", type="primary", use_container_width=True)
+
+            if login_submitted:
+                if not login_identifier or not login_password:
+                    st.warning("Please fill in both username/email and password.")
+                else:
+                    try:
+                        with st.spinner("Authenticating..."):
+                            payload = {"username": login_identifier, "password": login_password}
+                            response = fetch_api("/auth/login", method="POST", json=payload)
+                            if response.ok:
+                                user_data = response.json()
+                                st.session_state["user"] = user_data
+                                st.success(f"Welcome back, {user_data.get('username')}!")
+                                st.rerun()
+                            else:
+                                err_detail = response.json().get("detail", "Invalid username or password.")
+                                st.error(f"❌ {err_detail}")
+                    except requests.exceptions.ConnectionError:
+                        st.error("❌ Backend API service is unreachable. Please ensure the API container is running.")
+
+        # TAB 2: SIGN UP
+        with auth_tab_signup:
+            st.subheader("Create an Account")
+            with st.form("signup_form", clear_on_submit=False):
+                signup_username = st.text_input("Username", placeholder="e.g. praneeth")
+                signup_email = st.text_input("Email", placeholder="e.g. praneeth@example.com")
+                signup_password = st.text_input("Password", type="password", placeholder="Minimum 6 characters")
+                signup_confirm = st.text_input("Confirm Password", type="password", placeholder="Re-enter password")
+                signup_submitted = st.form_submit_button("Sign Up", type="primary", use_container_width=True)
+
+            if signup_submitted:
+                if not signup_username or not signup_email or not signup_password:
+                    st.warning("Please complete all required fields.")
+                elif signup_password != signup_confirm:
+                    st.error("Passwords do not match. Please check and try again.")
+                elif len(signup_password) < 6:
+                    st.error("Password must be at least 6 characters long.")
+                else:
+                    try:
+                        with st.spinner("Creating account..."):
+                            payload = {
+                                "username": signup_username.strip(),
+                                "email": signup_email.strip(),
+                                "password": signup_password,
+                            }
+                            response = fetch_api("/auth/signup", method="POST", json=payload)
+                            if response.ok:
+                                created_user = response.json()
+                                # Auto-login newly registered user
+                                st.session_state["user"] = created_user
+                                st.success("🎉 Account created successfully! Logging you in...")
+                                st.rerun()
+                            else:
+                                err_detail = response.json().get("detail", "Signup failed.")
+                                st.error(f"❌ {err_detail}")
+                    except requests.exceptions.ConnectionError:
+                        st.error("❌ Backend API service is unreachable. Please ensure the API container is running.")
+
+# ==========================================
+# 2. AUTHENTICATED STATE: FINANCE AGENTS HUB
+# ==========================================
+else:
+    current_user = st.session_state["user"]
+    username = current_user.get("username", "User")
+    email = current_user.get("email", "")
+
+    header_col1, header_col2 = st.columns([3, 1])
+    with header_col1:
+        st.title(f"Welcome, {username}! 👋")
+        st.caption(f"Signed in as `{email}` • Session active")
+    with header_col2:
+        st.write("")
+        st.write("")
+        if st.button("🚪 Log Out", use_container_width=True):
+            st.session_state["user"] = None
+            st.rerun()
+
+    st.divider()
+
+    st.markdown("### Applications & Intelligence Suites")
+    st.markdown("Select an application below or use the sidebar navigation:")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        with st.container(border=True):
+            st.subheader("📈 Portfolio Researcher")
+            st.markdown(
+                """
+                - **Personalized Portfolio**: Manage your dedicated holdings.
+                - **Holdings Analysis**: Track allocations, quantities, and weights.
+                - **AI Research Agents**: Autonomous financial agents researching market insights.
+                """
+            )
+            if st.button("🚀 Launch Portfolio Researcher", type="primary", use_container_width=True):
+                st.switch_page("pages/1_Portfolio_Researcher.py")
+
+    with col2:
+        with st.container(border=True):
+            st.subheader("🤖 Algorithmic Trading Bot")
+            st.markdown(
+                """
+                - **Strategy Execution**: Real-time signal generation and automated execution.
+                - **Backtesting Suite**: Evaluate risk, Sharpe ratios, and drawdowns.
+                - **Market Monitoring**: Live order books and algorithmic safety checks.
+                """
+            )
+            st.button("⚙️ Coming Soon", disabled=True, use_container_width=True)
+
+    st.divider()
+    st.caption("Finance Agents Monorepo • Clean Architecture Micro-Frontend")

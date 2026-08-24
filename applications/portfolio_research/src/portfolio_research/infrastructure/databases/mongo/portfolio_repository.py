@@ -1,5 +1,6 @@
 import os
-from pymongo import MongoClient
+from datetime import datetime, timezone
+from pymongo import MongoClient, ASCENDING
 from portfolio_research.domain.portfolio.holding import Holding
 from portfolio_research.domain.portfolio.portfolio import Portfolio
 from portfolio_research.repositories.portfolio_repository import PortfolioRepository
@@ -14,15 +15,32 @@ class MongoPortfolioRepository(PortfolioRepository):
         self._client = MongoClient(mongo_uri, serverSelectionTimeoutMS=3000)
         self._db = self._client[db_name]
         self._collection = self._db["portfolios"]
+        self._ensure_indexes()
+
+    def _ensure_indexes(self):
+        """Ensure unique index exists on user_id."""
+        try:
+            self._collection.create_index([("user_id", ASCENDING)], unique=True)
+        except Exception:
+            pass
 
     def upsert_portfolio(self, portfolio):
-        """Upsert a portfolio into MongoDB.
+        """Upsert a portfolio into MongoDB by user_id.
 
         Converts the domain Portfolio entity to a Mongo document, matching by
-        portfolio_id and replacing the entire holdings list using $set with upsert=True.
+        user_id and replacing the entire holdings list using $set with upsert=True.
         """
-        portfolio_id = getattr(portfolio, "portfolio_id", None) if hasattr(portfolio, "portfolio_id") else portfolio.get("portfolio_id")
-        raw_holdings = getattr(portfolio, "holdings", []) if hasattr(portfolio, "holdings") else portfolio.get("holdings", [])
+        user_id = (
+            getattr(portfolio, "user_id", None)
+            or getattr(portfolio, "portfolio_id", None)
+            or (portfolio.get("user_id") if isinstance(portfolio, dict) else None)
+            or (portfolio.get("portfolio_id") if isinstance(portfolio, dict) else None)
+        )
+        raw_holdings = (
+            getattr(portfolio, "holdings", [])
+            if hasattr(portfolio, "holdings")
+            else (portfolio.get("holdings", []) if isinstance(portfolio, dict) else [])
+        )
 
         holdings_doc = []
         for holding in raw_holdings:
@@ -42,19 +60,21 @@ class MongoPortfolioRepository(PortfolioRepository):
             })
 
         portfolio_doc = {
-            "portfolio_id": portfolio_id,
+            "user_id": user_id,
+            "portfolio_id": user_id,
             "holdings": holdings_doc,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         }
 
         return self._collection.update_one(
-            {"portfolio_id": portfolio_id},
+            {"$or": [{"user_id": user_id}, {"portfolio_id": user_id}]},
             {"$set": portfolio_doc},
             upsert=True,
         )
 
-    def get_portfolio(self, portfolio_id):
-        """Retrieve a Portfolio domain entity by its ID from MongoDB."""
-        doc = self._collection.find_one({"portfolio_id": portfolio_id})
+    def get_portfolio(self, user_id):
+        """Retrieve a Portfolio domain entity by user_id from MongoDB."""
+        doc = self._collection.find_one({"$or": [{"user_id": user_id}, {"portfolio_id": user_id}]})
         if not doc:
             return None
 
@@ -67,36 +87,5 @@ class MongoPortfolioRepository(PortfolioRepository):
                     average_price=float(h.get("average_price", 0.0)),
                 )
             )
-        return Portfolio(portfolio_id=doc["portfolio_id"], holdings=holdings)
-
-    def get_all_portfolios(self):
-        # TODO:
-        # - Mongo operation to be used: self._collection.find({})
-        # - Expected input: None
-        # - Expected return value: List[Portfolio] - A list of all Portfolio domain entities found in the collection
-        # - Note: If query fails, raise an exception
-        pass
-
-    def save_portfolio(self, portfolio):
-        # TODO:
-        # - Mongo operation to be used: self._collection.insert_one(portfolio_doc)
-        # - Expected input: portfolio (Portfolio) - The Portfolio domain entity to insert
-        # - Expected return value: None (or the inserted ID / persisted entity)
-        # - Note: If insertion fails or duplicate key error occurs, raise an exception
-        pass
-
-    def update_portfolio(self, portfolio):
-        # TODO:
-        # - Mongo operation to be used: self._collection.update_one({"portfolio_id": portfolio.portfolio_id}, {"$set": portfolio_doc})
-        # - Expected input: portfolio (Portfolio) - The Portfolio domain entity containing updated data
-        # - Expected return value: None (or boolean/update result indicating success)
-        # - Note: If update fails or target portfolio is not found, raise an exception
-        pass
-
-    def delete_portfolio(self, portfolio_id):
-        # TODO:
-        # - Mongo operation to be used: self._collection.delete_one({"portfolio_id": portfolio_id})
-        # - Expected input: portfolio_id (str) - The unique identifier of the portfolio to delete
-        # - Expected return value: None (or boolean/delete result indicating success)
-        # - Note: If deletion fails or document does not exist, raise an exception
-        pass
+        resolved_user_id = doc.get("user_id") or doc.get("portfolio_id")
+        return Portfolio(user_id=resolved_user_id, holdings=holdings, portfolio_id=resolved_user_id)
