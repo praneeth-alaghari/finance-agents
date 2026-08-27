@@ -14,6 +14,8 @@ services:
       context: ./applications/portfolio_research
       dockerfile: Dockerfile
     container_name: portfolio_research_service
+    env_file:
+      - .env
     environment:
       - MONGO_URI=mongodb://mongo:27017
       - PYTHONPATH=/app/src
@@ -29,8 +31,10 @@ services:
       context: ./frontend/streamlit
       dockerfile: Dockerfile
     container_name: frontend_streamlit
+    env_file:
+      - .env
     environment:
-      - API_BASE_URL=http://portfolio_research:8000/api/v1
+      - PORTFOLIO_RESEARCH_API_URL=http://portfolio_research:8000/api/v1
     volumes:
       - ./frontend/streamlit:/app
     ports:

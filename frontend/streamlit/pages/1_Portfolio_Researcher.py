@@ -6,20 +6,20 @@ import streamlit as st
 st.set_page_config(page_title="Portfolio Researcher", page_icon="📈", layout="wide")
 
 # API Configuration
-API_BASE_URL = os.getenv("API_BASE_URL", "http://portfolio_research:8000/api/v1")
+PORTFOLIO_RESEARCH_API_URL = os.getenv("PORTFOLIO_RESEARCH_API_URL", "http://portfolio_research:8000/api/v1")
 LOCAL_FALLBACK_URL = "http://localhost:8000/api/v1"
 
 
 def fetch_api(path, method="GET", **kwargs):
     """Helper function to perform requests with automatic fallback (Docker service -> localhost)."""
-    url = f"{API_BASE_URL}{path}"
+    url = f"{PORTFOLIO_RESEARCH_API_URL}{path}"
     try:
         if method == "GET":
             return requests.get(url, timeout=5, **kwargs)
         elif method == "POST":
             return requests.post(url, timeout=10, **kwargs)
     except requests.exceptions.ConnectionError:
-        if API_BASE_URL != LOCAL_FALLBACK_URL:
+        if PORTFOLIO_RESEARCH_API_URL != LOCAL_FALLBACK_URL:
             fallback_url = f"{LOCAL_FALLBACK_URL}{path}"
             if method == "GET":
                 return requests.get(fallback_url, timeout=5, **kwargs)

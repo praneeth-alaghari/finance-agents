@@ -7,7 +7,7 @@ RUN pip install --no-cache-dir .
 
 COPY . .
 
-ENV API_BASE_URL="http://portfolio_research:8000/api/v1"
+ENV PORTFOLIO_RESEARCH_API_URL="http://portfolio_research:8000/api/v1"
 
 EXPOSE 8501
 

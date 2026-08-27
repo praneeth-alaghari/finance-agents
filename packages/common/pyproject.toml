@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "common"
+version = "0.1.0"
+description = "Shared core utilities, AI connectors, and configuration across Finance Agents monorepo."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "python-dotenv",
+    "requests",
+    "langchain-core",
+    "langchain-openai"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["*"]
