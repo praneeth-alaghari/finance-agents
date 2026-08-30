@@ -10,28 +10,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# API Configuration
-PORTFOLIO_RESEARCH_API_URL = os.getenv("PORTFOLIO_RESEARCH_API_URL", "http://portfolio_research:8000/api/v1")
-LOCAL_FALLBACK_URL = "http://localhost:8000/api/v1"
-
-
-def fetch_api(path, method="GET", **kwargs):
-    """Helper function to perform API requests with fallback to localhost."""
-    url = f"{PORTFOLIO_RESEARCH_API_URL}{path}"
-    try:
-        if method == "GET":
-            return requests.get(url, timeout=5, **kwargs)
-        elif method == "POST":
-            return requests.post(url, timeout=10, **kwargs)
-    except requests.exceptions.ConnectionError:
-        if PORTFOLIO_RESEARCH_API_URL != LOCAL_FALLBACK_URL:
-            fallback_url = f"{LOCAL_FALLBACK_URL}{path}"
-            if method == "GET":
-                return requests.get(fallback_url, timeout=5, **kwargs)
-            elif method == "POST":
-                return requests.post(fallback_url, timeout=10, **kwargs)
-        raise
-
+from utils.api import fetch_api
 
 # Initialize session state for user authentication
 if "user" not in st.session_state:
