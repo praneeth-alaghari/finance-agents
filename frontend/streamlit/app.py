@@ -1,6 +1,8 @@
 import os
 import requests
 import streamlit as st
+from utils.api import fetch_api
+from utils.auth import restore_session, save_session, clear_session
 
 # Configure Landing Page
 st.set_page_config(
@@ -10,16 +12,13 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-from utils.api import fetch_api
-
-# Initialize session state for user authentication
-if "user" not in st.session_state:
-    st.session_state["user"] = None
+# 1. Attempt persistent session restoration from browser cookies
+user = restore_session()
 
 # ==========================================
 # 1. UNAUTHENTICATED STATE: AUTHENTICATION GATE
 # ==========================================
-if not st.session_state["user"]:
+if not user:
     st.title("💼 Finance Agents")
     st.markdown("### Secure Financial Intelligence & Multi-Agent Platform")
     st.caption("Please log in to your account or create a new account to continue.")
@@ -49,9 +48,8 @@ if not st.session_state["user"]:
                             response = fetch_api("/auth/login", method="POST", json=payload)
                             if response.ok:
                                 user_data = response.json()
-                                st.session_state["user"] = user_data
                                 st.success(f"Welcome back, {user_data.get('username')}!")
-                                st.rerun()
+                                save_session(user_data)
                             else:
                                 err_detail = response.json().get("detail", "Invalid username or password.")
                                 st.error(f"❌ {err_detail}")
@@ -86,10 +84,8 @@ if not st.session_state["user"]:
                             response = fetch_api("/auth/signup", method="POST", json=payload)
                             if response.ok:
                                 created_user = response.json()
-                                # Auto-login newly registered user
-                                st.session_state["user"] = created_user
                                 st.success("🎉 Account created successfully! Logging you in...")
-                                st.rerun()
+                                save_session(created_user)
                             else:
                                 err_detail = response.json().get("detail", "Signup failed.")
                                 st.error(f"❌ {err_detail}")
@@ -100,7 +96,7 @@ if not st.session_state["user"]:
 # 2. AUTHENTICATED STATE: FINANCE AGENTS HUB
 # ==========================================
 else:
-    current_user = st.session_state["user"]
+    current_user = user
     username = current_user.get("username", "User")
     email = current_user.get("email", "")
 
@@ -112,8 +108,7 @@ else:
         st.write("")
         st.write("")
         if st.button("🚪 Log Out", use_container_width=True):
-            st.session_state["user"] = None
-            st.rerun()
+            clear_session()
 
     st.divider()
 

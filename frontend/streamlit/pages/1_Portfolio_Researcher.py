@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 import streamlit as st
 from utils.api import fetch_api
-from utils.auth import require_auth, get_user_headers
+from utils.auth import require_auth, get_user_headers, clear_session
 
 st.set_page_config(page_title="Portfolio Researcher", page_icon="📈", layout="wide")
 
@@ -25,8 +25,7 @@ with header_right:
     with nav_logout:
         st.write("")
         if st.button("🚪 Logout", use_container_width=True):
-            st.session_state["user"] = None
-            st.switch_page("app.py")
+            clear_session()
 
 st.divider()
 

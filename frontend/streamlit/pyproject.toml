@@ -9,5 +9,6 @@ description = "Streamlit frontend UI for Finance Agents."
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "streamlit",
-    "requests"
+    "requests",
+    "streamlit-cookies-controller"
 ]
