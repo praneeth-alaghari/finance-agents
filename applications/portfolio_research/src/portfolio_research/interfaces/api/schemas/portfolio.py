@@ -17,3 +17,10 @@ class PortfolioResponse(BaseModel):
     holdings: list[HoldingResponse]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PortfolioInsightResponse(BaseModel):
+    """API response model for AI generated portfolio insights."""
+    user_id: str
+    insight: str
+    model: str

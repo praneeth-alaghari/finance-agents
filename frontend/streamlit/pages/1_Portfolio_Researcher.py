@@ -10,21 +10,23 @@ PORTFOLIO_RESEARCH_API_URL = os.getenv("PORTFOLIO_RESEARCH_API_URL", "http://por
 LOCAL_FALLBACK_URL = "http://localhost:8000/api/v1"
 
 
-def fetch_api(path, method="GET", **kwargs):
+def fetch_api(path, method="GET", timeout=None, **kwargs):
     """Helper function to perform requests with automatic fallback (Docker service -> localhost)."""
     url = f"{PORTFOLIO_RESEARCH_API_URL}{path}"
+    default_timeout = 10 if method == "GET" else 60
+    call_timeout = timeout or default_timeout
     try:
         if method == "GET":
-            return requests.get(url, timeout=5, **kwargs)
+            return requests.get(url, timeout=call_timeout, **kwargs)
         elif method == "POST":
-            return requests.post(url, timeout=10, **kwargs)
+            return requests.post(url, timeout=call_timeout, **kwargs)
     except requests.exceptions.ConnectionError:
         if PORTFOLIO_RESEARCH_API_URL != LOCAL_FALLBACK_URL:
             fallback_url = f"{LOCAL_FALLBACK_URL}{path}"
             if method == "GET":
-                return requests.get(fallback_url, timeout=5, **kwargs)
+                return requests.get(fallback_url, timeout=call_timeout, **kwargs)
             elif method == "POST":
-                return requests.post(fallback_url, timeout=10, **kwargs)
+                return requests.post(fallback_url, timeout=call_timeout, **kwargs)
         raise
 
 
@@ -107,3 +109,36 @@ if uploaded_file and st.button("Upload CSV"):
         st.error(
             "❌ Could not connect to FastAPI backend (tried `portfolio_research:8000` and `localhost:8000`). Please ensure the service is running."
         )
+
+st.divider()
+
+# Section 3: AI Portfolio Insights
+st.subheader("3. AI Portfolio Insights")
+st.markdown("Generate research insights, risk analysis, and strategic recommendations for your current holdings.")
+
+if st.button("🤖 Get AI Insight", type="primary"):
+    try:
+        with st.spinner("Analyzing portfolio with AI agent (reasoning models may take 15–30s)..."):
+            response = fetch_api("/portfolio/insights", method="POST", timeout=120, headers=user_headers)
+            if response.ok:
+                data = response.json()
+                insight_text = data.get("insight", "")
+                model_used = data.get("model", "OpenAI")
+                st.success("✅ AI Portfolio Analysis Complete!")
+                st.caption(f"🧠 **Model Engine:** `{model_used}` • Powered by LangChain")
+                with st.expander(f"📊 AI Research & Risk Report ({model_used})", expanded=True):
+                    st.markdown(insight_text)
+            elif response.status_code == 422:
+                detail = response.json().get("detail", "Please upload a portfolio first.")
+                st.warning(f"⚠️ {detail}")
+            elif response.status_code == 404:
+                st.info("ℹ️ No portfolio found. Please upload your portfolio CSV in Section 2 first.")
+            else:
+                st.error(f"Error {response.status_code}: {response.text}")
+    except requests.exceptions.ReadTimeout:
+        st.error("⏳ The AI model took longer than 2 minutes to respond. Please try again or switch to a faster model.")
+    except requests.exceptions.ConnectionError:
+        st.error(
+            "❌ Could not connect to FastAPI backend (tried `portfolio_research:8000` and `localhost:8000`). Please ensure the service is running."
+        )
+

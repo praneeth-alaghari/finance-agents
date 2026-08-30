@@ -17,6 +17,19 @@ class InMemoryPortfolioRepository(PortfolioRepository):
         return portfolio
 
 
+class FakeLLMClient:
+    """Mock LLM client for deterministic unit testing."""
+
+    def __init__(self, response_text="Mock AI Analysis", model="mock-gpt-4o"):
+        self.response_text = response_text
+        self.model = model
+        self.last_prompt = None
+
+    def generate(self, prompt, system_instruction=None, temperature=None):
+        self.last_prompt = prompt
+        return self.response_text
+
+
 def test_upload_and_get_portfolio():
     repo = InMemoryPortfolioRepository()
     service = PortfolioService(portfolio_repository=repo)
@@ -55,3 +68,26 @@ def test_user_portfolios_are_isolated():
 
     assert len(portfolio_b.holdings) == 1
     assert portfolio_b.holdings[0].symbol == "AAPL"
+
+
+def test_generate_ai_insight_success():
+    repo = InMemoryPortfolioRepository()
+    service = PortfolioService(portfolio_repository=repo)
+
+    rows = [{"ticker": "NVDA", "quantity": "15", "average_price": "120.0"}]
+    service.upload_portfolio_csv("usr_ai_test", rows)
+
+    mock_llm = FakeLLMClient(response_text="Strong tech allocation with high growth potential.", model="gpt-4o-mini")
+    result = service.generate_ai_insight("usr_ai_test", llm_client=mock_llm)
+
+    assert "Strong tech allocation" in result["insight"]
+    assert result["model"] == "gpt-4o-mini"
+    assert "NVDA" in mock_llm.last_prompt
+
+
+def test_generate_ai_insight_empty_portfolio():
+    repo = InMemoryPortfolioRepository()
+    service = PortfolioService(portfolio_repository=repo)
+
+    with pytest.raises(ValueError, match="No portfolio found"):
+        service.generate_ai_insight("empty_user")

@@ -56,3 +56,40 @@ class PortfolioService:
         portfolio = Portfolio(user_id=user_id, holdings=holdings, portfolio_id=user_id)
         self._portfolio_repository.upsert_portfolio(portfolio)
         return portfolio
+
+    def generate_ai_insight(self, user_id, llm_client=None):
+        """Generates AI analysis and insights for a user's portfolio."""
+        portfolio = self.get_portfolio(user_id)
+        if not portfolio or not portfolio.holdings:
+            raise ValueError("No portfolio found for this user. Please upload a portfolio CSV first.")
+
+        holdings_summary = []
+        total_invested = 0.0
+        for h in portfolio.holdings:
+            invested = h.quantity * h.average_price
+            total_invested += invested
+            holdings_summary.append(
+                f"- Ticker: {h.symbol}, Quantity: {h.quantity}, Avg Price: ${h.average_price:,.2f}, Total Cost: ${invested:,.2f}"
+            )
+
+        prompt = (
+            f"User Portfolio Summary (Total Invested: ${total_invested:,.2f}):\n"
+            + "\n".join(holdings_summary)
+            + "\n\nPlease provide a clear and professional financial analysis of this portfolio covering:\n"
+            + "1. Diversification & Concentration Risk\n"
+            + "2. Key Strengths & Potential Exposures\n"
+            + "3. Strategic Recommendations for Rebalancing or Risk Management"
+        )
+
+        system_instruction = (
+            "You are an elite institutional portfolio manager and quantitative risk analyst. "
+            "Provide insightful, concise, and structured financial portfolio assessments."
+        )
+
+        if llm_client is None:
+            from ai_core import get_llm_client
+            llm_client = get_llm_client()
+
+        insight = llm_client.generate(prompt=prompt, system_instruction=system_instruction)
+        model_name = getattr(llm_client, "model", "Unknown Model")
+        return {"insight": insight, "model": model_name}

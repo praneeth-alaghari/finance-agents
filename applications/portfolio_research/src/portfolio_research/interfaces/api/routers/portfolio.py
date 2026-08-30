@@ -3,7 +3,7 @@ import io
 from fastapi import APIRouter, HTTPException, UploadFile, File, Header
 from portfolio_research.application.portfolio_service import PortfolioService
 from portfolio_research.infrastructure.databases.mongo.portfolio_repository import MongoPortfolioRepository
-from portfolio_research.interfaces.api.schemas.portfolio import PortfolioResponse
+from portfolio_research.interfaces.api.schemas.portfolio import PortfolioResponse, PortfolioInsightResponse
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
@@ -51,3 +51,21 @@ async def upload_portfolio(
         raise HTTPException(status_code=500, detail=f"Failed to persist portfolio: {err}")
 
     return PortfolioResponse.model_validate(domain_portfolio)
+
+
+@router.post("/insights", response_model=PortfolioInsightResponse)
+def get_portfolio_insights(x_user_id: str = Header("default", alias="X-User-Id")):
+    """Generates LLM-powered financial research and insights for the user's portfolio."""
+    repository = MongoPortfolioRepository()
+    service = PortfolioService(portfolio_repository=repository)
+    try:
+        result = service.generate_ai_insight(user_id=x_user_id)
+        return PortfolioInsightResponse(
+            user_id=x_user_id,
+            insight=result["insight"],
+            model=result["model"],
+        )
+    except ValueError as val_err:
+        raise HTTPException(status_code=422, detail=str(val_err))
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=f"AI insight generation failed: {err}")

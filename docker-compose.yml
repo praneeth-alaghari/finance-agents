@@ -11,16 +11,19 @@ services:
 
   portfolio_research:
     build:
-      context: ./applications/portfolio_research
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./applications/portfolio_research/Dockerfile
     container_name: portfolio_research_service
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       - MONGO_URI=mongodb://mongo:27017
-      - PYTHONPATH=/app/src
+      - PYTHONPATH=/app/src:/app/packages/common/src
     volumes:
       - ./applications/portfolio_research/src:/app/src
+      - ./packages/common/src:/app/packages/common/src
+      - ./.env:/app/.env:ro
     ports:
       - "8000:8000"
     depends_on:
@@ -32,11 +35,13 @@ services:
       dockerfile: Dockerfile
     container_name: frontend_streamlit
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       - PORTFOLIO_RESEARCH_API_URL=http://portfolio_research:8000/api/v1
     volumes:
       - ./frontend/streamlit:/app
+      - ./.env:/app/.env:ro
     ports:
       - "8501:8501"
     depends_on:
