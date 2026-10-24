@@ -11,7 +11,12 @@ dependencies = [
     "python-dotenv",
     "requests",
     "langchain-core",
-    "langchain-openai"
+    "langchain-openai",
+    "langchain",
+    "langchain-community",
+    "langchain-classic",
+    "duckduckgo-search",
+    "ddgs"
 ]
 
 [tool.setuptools.packages.find]

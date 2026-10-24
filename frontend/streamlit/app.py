@@ -115,7 +115,7 @@ else:
     st.markdown("### Applications & Intelligence Suites")
     st.markdown("Select an application below or use the sidebar navigation:")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         with st.container(border=True):
@@ -132,6 +132,31 @@ else:
 
     with col2:
         with st.container(border=True):
+            st.subheader("🌐 Market Researcher")
+            st.markdown(
+                """
+                - **Macroeconomic Intelligence**: Inflation, rates, growth, liquidity.
+                - **Sector Rotation Analysis**: Momentum & relative strength tracking.
+                - **Multi-Agent Orchestrator**: Shared MarketContext for trading & portfolios.
+                """
+            )
+            if st.button("🚀 Launch Market Researcher", type="primary", use_container_width=True):
+                st.switch_page("pages/2_Market_Researcher.py")
+
+    with col3:
+        with st.container(border=True):
+            st.subheader("💬 AI Financial Chatbot")
+            st.markdown(
+                """
+                - **Intent-Driven Q&A**: Ask any free-form financial or market question.
+                - **Dynamic Agent Dispatch**: Automatically routes queries to Market or Portfolio agents.
+                - **Unified Synthesis**: Delivers cross-domain insights in a unified conversational thread.
+                """
+            )
+            st.button("⚙️ Coming Soon", disabled=True, key="btn_chatbot_coming_soon", use_container_width=True)
+
+    with col4:
+        with st.container(border=True):
             st.subheader("🤖 Algorithmic Trading Bot")
             st.markdown(
                 """
@@ -140,7 +165,7 @@ else:
                 - **Market Monitoring**: Live order books and algorithmic safety checks.
                 """
             )
-            st.button("⚙️ Coming Soon", disabled=True, use_container_width=True)
+            st.button("⚙️ Coming Soon", disabled=True, key="btn_algo_coming_soon", use_container_width=True)
 
     st.divider()
     st.caption("Finance Agents Monorepo • Clean Architecture Micro-Frontend")

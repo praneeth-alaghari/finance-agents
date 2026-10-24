@@ -19,9 +19,10 @@ services:
         required: false
     environment:
       - MONGO_URI=mongodb://mongo:27017
-      - PYTHONPATH=/app/src:/app/packages/common/src
+      - PYTHONPATH=/app/src:/app/packages/common/src:/app/market_research_src
     volumes:
       - ./applications/portfolio_research/src:/app/src
+      - ./applications/market_research/src:/app/market_research_src
       - ./packages/common/src:/app/packages/common/src
       - ./.env:/app/.env:ro
     ports:

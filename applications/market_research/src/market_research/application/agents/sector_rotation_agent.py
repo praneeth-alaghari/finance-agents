@@ -1,5 +1,10 @@
+import json
 from ai_core import get_llm_client
 from common.models import SectorTrend
+from market_research.prompts.sector_rotation import (
+    SECTOR_ROTATION_PROMPT_TEMPLATE,
+    SYSTEM_INSTRUCTION,
+)
 
 
 class SectorRotationAgent:
@@ -8,28 +13,13 @@ class SectorRotationAgent:
     def __init__(self, llm_client=None):
         self._llm_client = llm_client or get_llm_client()
 
-    def run(self, market_summary="", sector_focus=None):
-        focus = sector_focus or "broad equity market"
-        prompt = f"""You are a sector rotation analyst.
-
-Review the market narrative and identify which sectors are leading, lagging, and rotating.
-Focus: {focus}
-
-Reference context:
-{market_summary}
-
-Return a JSON object with:
-- summary: one paragraph
-- sector_trends: a list of objects with name, strength, summary
-"""
-
+    def run(self, *args, **kwargs):
         raw_response = self._llm_client.generate(
-            prompt=prompt,
-            system_instruction="You are an expert sector strategist. Translate market conditions into sector-level insights.",
+            prompt=SECTOR_ROTATION_PROMPT_TEMPLATE,
+            system_instruction=SYSTEM_INSTRUCTION,
         )
 
         try:
-            import json
             payload = json.loads(raw_response)
         except Exception:
             payload = {
@@ -37,17 +27,21 @@ Return a JSON object with:
                 "sector_trends": [],
             }
 
-        sector_trends = []
-        for item in payload.get("sector_trends", []):
-            sector_trends.append(
-                SectorTrend(
-                    name=item.get("name", "sector"),
-                    strength=float(item.get("strength", 0.0) or 0.0),
-                    summary=item.get("summary", ""),
-                )
+        sector_trends = [
+            SectorTrend(
+                name=item.get("name", "sector"),
+                summary=item.get("summary", ""),
             )
+            for item in payload.get("sector_trends", [])
+        ]
+
+        raw_summary = payload.get("summary", raw_response)
+        if isinstance(raw_summary, list):
+            summary = "\n".join(f"• {str(item).lstrip('•- ')}" for item in raw_summary if item)
+        else:
+            summary = str(raw_summary or "").strip()
 
         return {
-            "summary": payload.get("summary", raw_response),
+            "summary": summary,
             "sector_trends": sector_trends,
         }
