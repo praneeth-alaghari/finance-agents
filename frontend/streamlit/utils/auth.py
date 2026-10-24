@@ -76,13 +76,20 @@ def save_session(user_data, reload=True):
         components.html(js_code, height=0, width=0)
 
 
-def clear_session(redirect_to="/"):
-    """Clears user session from state, deletes browser cookie, and redirects to home."""
+def clear_session(redirect_to="/", reload=True):
+    """Clears user session from state, deletes browser cookie, and optionally redirects."""
     st.session_state["user"] = None
     try:
         st.query_params.clear()
     except Exception:
         pass
+
+    redirect_js = ""
+    if reload:
+        if redirect_to:
+            redirect_js = f'window.parent.location.href = "{redirect_to}";'
+        else:
+            redirect_js = "window.parent.location.reload();"
 
     js_code = f"""
     <script>
@@ -91,7 +98,7 @@ def clear_session(redirect_to="/"):
         if (window.parent && window.parent.document) {{
             window.parent.document.cookie = "{COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax;";
         }}
-        window.parent.location.href = "{redirect_to}";
+        {redirect_js}
     }} catch (e) {{
         console.error("Cookie clear error:", e);
     }}
