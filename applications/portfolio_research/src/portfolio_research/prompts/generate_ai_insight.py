@@ -1,5 +1,3 @@
-"""Prompt templates for generate_ai_insight."""
-
 SYSTEM_INSTRUCTION = """You are an elite institutional portfolio manager and quantitative risk analyst. Provide insightful, concise, and structured financial portfolio assessments."""
 
 USER_PROMPT_TEMPLATE = """User Portfolio Summary (Total Invested: ${total_invested:,.2f}):

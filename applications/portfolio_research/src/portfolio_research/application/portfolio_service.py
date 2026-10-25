@@ -8,17 +8,13 @@ from portfolio_research.prompts.generate_ai_insight import (
 
 
 class PortfolioService:
-    """Application service for managing portfolio logic, decoupled from persistence engines."""
-
     def __init__(self, portfolio_repository):
         self._portfolio_repository = portfolio_repository
 
     def get_portfolio(self, user_id="default"):
-        """Retrieves a portfolio domain entity by user_id via injected repository."""
         return self._portfolio_repository.get_portfolio(user_id)
 
     def upload_portfolio_csv(self, user_id, csv_rows):
-        """Parses CSV rows, validates data, constructs domain objects, and persists via upsert."""
         if not user_id:
             raise ValueError("User identification is required to upload a portfolio.")
 
@@ -59,7 +55,6 @@ class PortfolioService:
         return portfolio
 
     def generate_ai_insight(self, user_id, llm_client=None):
-        """Generates AI analysis and insights for a user's portfolio."""
         portfolio = self.get_portfolio(user_id)
         if not portfolio or not portfolio.holdings:
             raise ValueError("No portfolio found for this user. Please upload a portfolio CSV first.")

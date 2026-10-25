@@ -1,5 +1,3 @@
-"""Prompt templates for SectorRotationAgent."""
-
 SYSTEM_INSTRUCTION = (
     "You are an expert sector strategist. Translate market conditions into sector-level insights."
 )

@@ -79,6 +79,7 @@ with header_right:
         st.write("")
         if st.button("🚪 Logout", use_container_width=True):
             clear_session()
+            st.switch_page("app.py")
 
 st.divider()
 

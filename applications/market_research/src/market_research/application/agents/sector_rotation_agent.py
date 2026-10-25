@@ -1,4 +1,5 @@
 import json
+import re
 from ai_core import get_llm_client
 from common.models import SectorTrend
 from market_research.prompts.sector_rotation import (
@@ -8,8 +9,6 @@ from market_research.prompts.sector_rotation import (
 
 
 class SectorRotationAgent:
-    """Identifies which sectors are leading or lagging relative to the broader market."""
-
     def __init__(self, llm_client=None):
         self._llm_client = llm_client or get_llm_client()
 
@@ -20,12 +19,11 @@ class SectorRotationAgent:
         )
 
         try:
-            payload = json.loads(raw_response)
-        except Exception:
-            payload = {
-                "summary": raw_response,
-                "sector_trends": [],
-            }
+            cleaned = re.sub(r"```(?:json)?", "", raw_response).strip().rstrip("```").strip()
+            payload = json.loads(cleaned)
+        except Exception as exc:
+            print(f"[SectorRotationAgent] JSON parse error: {exc}\nRaw response:\n{raw_response}")
+            payload = {"summary": raw_response, "sector_trends": []}
 
         sector_trends = [
             SectorTrend(

@@ -50,6 +50,7 @@ if not user:
                                 user_data = response.json()
                                 st.success(f"Welcome back, {user_data.get('username')}!")
                                 save_session(user_data)
+                                st.rerun()
                             else:
                                 err_detail = response.json().get("detail", "Invalid username or password.")
                                 st.error(f"❌ {err_detail}")
@@ -86,6 +87,7 @@ if not user:
                                 created_user = response.json()
                                 st.success("🎉 Account created successfully! Logging you in...")
                                 save_session(created_user)
+                                st.rerun()
                             else:
                                 err_detail = response.json().get("detail", "Signup failed.")
                                 st.error(f"❌ {err_detail}")
@@ -109,6 +111,7 @@ else:
         st.write("")
         if st.button("🚪 Log Out", use_container_width=True):
             clear_session()
+            st.rerun()
 
     st.divider()
 

@@ -4,7 +4,7 @@ import sys
 import httpx
 
 
-def main() -> None:
+def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
 

@@ -4,12 +4,11 @@ from portfolio_research.repositories.portfolio_repository import PortfolioReposi
 
 
 class InMemoryPortfolioRepository(PortfolioRepository):
-    """In-memory concrete implementation of PortfolioRepository contract."""
-
     def __init__(self):
         self._portfolios = {
             "default": Portfolio(
-                portfolio_id="default_memory",
+                user_id="default",
+                portfolio_id="default",
                 holdings=[
                     Holding(symbol="AAPL", quantity=10.0, average_price=150.0),
                     Holding(symbol="MSFT", quantity=5.0, average_price=280.0),
@@ -18,6 +17,9 @@ class InMemoryPortfolioRepository(PortfolioRepository):
             )
         }
 
-    def get_portfolio(self, portfolio_id):
-        """Retrieves a portfolio by ID from in-memory dictionary storage."""
-        return self._portfolios.get(portfolio_id)
+    def get_portfolio(self, user_id):
+        return self._portfolios.get(user_id)
+
+    def upsert_portfolio(self, portfolio):
+        self._portfolios[portfolio.user_id] = portfolio
+        return portfolio

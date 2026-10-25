@@ -28,7 +28,6 @@ class CompanyEarningsSnapshot:
 
 @dataclass
 class MarketContext:
-    """Shared market intelligence object reused by multiple finance apps."""
     market_summary: str = ""
     macro_factors: list[MacroSnapshot] = field(default_factory=list)
     sector_trends: list[SectorTrend] = field(default_factory=list)

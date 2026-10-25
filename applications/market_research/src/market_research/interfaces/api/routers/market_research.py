@@ -20,7 +20,6 @@ def health_check():
 
 @router.post("/orchestrate", response_model=MarketContextResponse)
 def orchestrate_market_research(request: MarketResearchRequest):
-    """Executes full market research workflow: macro + sector rotation -> MarketContext."""
     try:
         orchestrator = MarketResearchOrchestrator()
         context = orchestrator.run(region=request.region)
@@ -31,7 +30,6 @@ def orchestrate_market_research(request: MarketResearchRequest):
 
 @router.post("/macro", response_model=MacroAnalysisResponse)
 def run_macro_analysis(request: MarketResearchRequest):
-    """Executes MacroEconomicsAgent individually."""
     try:
         agent = MacroEconomicsAgent()
         result = agent.run(region=request.region)
@@ -45,7 +43,6 @@ def run_macro_analysis(request: MarketResearchRequest):
 
 @router.post("/sector", response_model=SectorAnalysisResponse)
 def run_sector_analysis(request: MarketResearchRequest):
-    """Executes SectorRotationAgent individually."""
     try:
         agent = SectorRotationAgent()
         result = agent.run()

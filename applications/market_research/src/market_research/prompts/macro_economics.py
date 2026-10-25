@@ -1,13 +1,9 @@
-"""Prompt templates for MacroEconomicsAgent."""
-
 SYSTEM_INSTRUCTION = (
     "You are an expert macro strategist with access to web search. "
     "Always search for the latest data before forming conclusions. "
     "Return structured, practical, data-grounded market commentary."
 )
 
-# Used as the 'input' task string sent to the AgentExecutor.
-# The agent will decide how many searches to run before composing the final answer.
 MACRO_ANALYSIS_TASK_TEMPLATE = """Research the current macroeconomic conditions for {region}.
 
 Search for the latest data on:
@@ -33,5 +29,4 @@ After gathering real data from your searches, compose a final answer as a valid 
 Return ONLY the JSON object as your Final Answer. No markdown fences.
 """
 
-# Alias for backward compatibility
 MACRO_ANALYSIS_PROMPT_TEMPLATE = MACRO_ANALYSIS_TASK_TEMPLATE

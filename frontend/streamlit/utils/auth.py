@@ -1,38 +1,30 @@
-"""Authentication utilities and persistent session management for Streamlit."""
 import streamlit as st
-import streamlit.components.v1 as components
 from utils.api import fetch_api
 
 COOKIE_KEY = "fa_session_user_id"
 
 
 def restore_session():
-    """Restores user session from native HTTP cookies, query parameters, or component cookies."""
+    if st.session_state.get("logged_out"):
+        return None
+
     if st.session_state.get("user"):
         return st.session_state["user"]
 
     user_id = None
+    if hasattr(st, "context") and hasattr(st.context, "cookies"):
+        user_id = st.context.cookies.get(COOKIE_KEY)
 
-    # 1. Native Streamlit HTTP request cookies (sent directly by browser in request headers)
-    try:
-        if hasattr(st, "context") and hasattr(st.context, "cookies"):
-            user_id = st.context.cookies.get(COOKIE_KEY)
-    except Exception:
-        user_id = None
-
-    # 2. URL query parameters (?session=usr_...)
     if not user_id:
         try:
             user_id = st.query_params.get("session")
         except Exception:
             user_id = None
 
-    # 3. Fallback to CookieController component
     if not user_id:
         try:
             from streamlit_cookies_controller import CookieController
-            controller = CookieController()
-            user_id = controller.get(COOKIE_KEY)
+            user_id = CookieController().get(COOKIE_KEY)
         except Exception:
             user_id = None
 
@@ -44,71 +36,40 @@ def restore_session():
                 st.session_state["user"] = user_data
                 return user_data
             else:
-                # Invalid user, clear stale cookie
-                clear_session(reload=False)
+                clear_session()
         except Exception:
             pass
     return None
 
 
-def save_session(user_data, reload=True):
-    """Saves user data in session_state and sets persistent browser cookie with 30-day expiry."""
+def save_session(user_data):
     st.session_state["user"] = user_data
+    st.session_state["logged_out"] = False
     if user_data and user_data.get("user_id"):
         uid = str(user_data["user_id"])
         st.query_params["session"] = uid
-        max_age = 30 * 24 * 60 * 60
-
-        reload_js = "window.parent.location.reload();" if reload else ""
-        js_code = f"""
-        <script>
-        try {{
-            document.cookie = "{COOKIE_KEY}={uid}; path=/; max-age={max_age}; SameSite=Lax;";
-            if (window.parent && window.parent.document) {{
-                window.parent.document.cookie = "{COOKIE_KEY}={uid}; path=/; max-age={max_age}; SameSite=Lax;";
-            }}
-            {reload_js}
-        }} catch (e) {{
-            console.error("Cookie write error:", e);
-        }}
-        </script>
-        """
-        components.html(js_code, height=0, width=0)
+        try:
+            from streamlit_cookies_controller import CookieController
+            CookieController().set(COOKIE_KEY, uid)
+        except Exception:
+            pass
 
 
-def clear_session(redirect_to="/", reload=True):
-    """Clears user session from state, deletes browser cookie, and optionally redirects."""
+def clear_session():
     st.session_state["user"] = None
+    st.session_state["logged_out"] = True
     try:
         st.query_params.clear()
     except Exception:
         pass
-
-    redirect_js = ""
-    if reload:
-        if redirect_to:
-            redirect_js = f'window.parent.location.href = "{redirect_to}";'
-        else:
-            redirect_js = "window.parent.location.reload();"
-
-    js_code = f"""
-    <script>
-    try {{
-        document.cookie = "{COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax;";
-        if (window.parent && window.parent.document) {{
-            window.parent.document.cookie = "{COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax;";
-        }}
-        {redirect_js}
-    }} catch (e) {{
-        console.error("Cookie clear error:", e);
-    }}
-    </script>
-    """
-    components.html(js_code, height=0, width=0)
+    try:
+        from streamlit_cookies_controller import CookieController
+        CookieController().remove(COOKIE_KEY)
+    except Exception:
+        pass
 
 
 def require_auth():
-    """Enforces authentication on a page. Checks session state or restores from persistent session."""
     user = restore_session()
     if not user:
         st.warning("🔒 Please log in to access this page.")
@@ -119,6 +80,5 @@ def require_auth():
 
 
 def get_user_headers():
-    """Constructs user-scoped authentication headers for API requests."""
     user = require_auth()
     return {"X-User-Id": user.get("user_id", "default")}

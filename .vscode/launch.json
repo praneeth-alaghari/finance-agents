@@ -1,0 +1,43 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug: Streamlit Frontend",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "streamlit",
+      "args": [
+        "run",
+        "frontend/streamlit/app.py",
+        "--server.port=8501",
+        "--server.headless=true"
+      ],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/applications/portfolio_research/src;${workspaceFolder}/applications/market_research/src;${workspaceFolder}/packages/common/src",
+        "PORTFOLIO_RESEARCH_API_URL": "http://localhost:8000/api/v1"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Debug: FastAPI Backend (Agents)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "portfolio_research.interfaces.api.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload"
+      ],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/applications/portfolio_research/src;${workspaceFolder}/applications/market_research/src;${workspaceFolder}/packages/common/src",
+        "MONGO_URI": "mongodb://localhost:27017"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}

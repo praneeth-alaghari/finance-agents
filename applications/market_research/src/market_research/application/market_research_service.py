@@ -2,8 +2,6 @@ from common.models import CompanyEarningsSnapshot, MacroSnapshot, MarketContext,
 
 
 class MarketResearchService:
-    """Service for building shared market context used by finance apps."""
-
     def build_market_context(self, market_summary="", macro_factors=None, sector_trends=None, company_earnings=None):
         return MarketContext(
             market_summary=market_summary,

@@ -4,8 +4,6 @@ from market_research.application.agents.sector_rotation_agent import SectorRotat
 
 
 class MarketResearchOrchestrator:
-    """Coordinates market intelligence agents into a single reusable market context."""
-
     def __init__(self, llm_client=None):
         self._macro_agent = MacroEconomicsAgent(llm_client=llm_client)
         self._sector_agent = SectorRotationAgent(llm_client=llm_client)

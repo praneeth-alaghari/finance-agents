@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 
 @dataclass
 class User:
-    """Domain model representing a system user."""
     user_id: str
     username: str
     email: str
